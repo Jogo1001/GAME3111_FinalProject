@@ -670,7 +670,7 @@ void ShapesApp::BuildShapeGeometry()
 	roofSubmesh.StartIndexLocation = roofVertexOffset;
 	roofSubmesh.BaseVertexLocation = roofVertexOffset;
 
-	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size();
+	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size() + rooftop.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -679,7 +679,7 @@ void ShapesApp::BuildShapeGeometry()
 	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = box.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkOrange); // wall color
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Blue); // wall color
 	}
 	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
 	{
@@ -866,6 +866,18 @@ void ShapesApp::BuildRenderItems()
 	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(gridRitem));
 
+	//roof
+	float roofYOffset = 2.0f; // Fixed the Y offset here as well
+	auto roofRitem = std::make_unique<RenderItem>();
+	XMStoreFloat4x4(&roofRitem->World,
+		XMMatrixTranslation(0.0f, roofYOffset, 0.0f) * XMMatrixScaling(1.3f, 1.0f, 1.0f));
+	roofRitem->ObjCBIndex = (UINT)mAllRitems.size();
+	roofRitem->Geo = mGeometries["shapeGeo"].get();
+	roofRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	roofRitem->IndexCount = roofRitem->Geo->DrawArgs["rooftop"].IndexCount;
+	roofRitem->StartIndexLocation = roofRitem->Geo->DrawArgs["rooftop"].StartIndexLocation;
+	roofRitem->BaseVertexLocation = roofRitem->Geo->DrawArgs["rooftop"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(roofRitem));
 
 	for (auto& e : mAllRitems)
 		mOpaqueRitems.push_back(e.get());
