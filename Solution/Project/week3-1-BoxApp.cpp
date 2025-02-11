@@ -626,13 +626,16 @@ void ShapesApp::BuildShapeGeometry()
 	// box geometry for castle's walls
 	GeometryGenerator::MeshData box = geoGen.CreateBox(2.0f, 2.0f, 2.0f, 3);
 
+	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.5f, 2.0f, 20, 20);
 
 
 	UINT boxVertexOffset = 0;
-
-
+	UINT cylinderVertexOffset = (UINT)box.Vertices.size();
+	
 	
 	UINT boxIndexOffset = 0;
+	UINT cylinderIndexOffset = (UINT)box.Indices32.size();
+	
 
 
 	
@@ -642,13 +645,14 @@ void ShapesApp::BuildShapeGeometry()
 	boxSubmesh.StartIndexLocation = boxIndexOffset;
 	boxSubmesh.BaseVertexLocation = boxVertexOffset;
 
+	SubmeshGeometry cylinderSubmesh;
+	cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
+	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
+	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
 
-	//
-	// Extract the vertex elements we are interested in and pack the
-	// vertices of all the meshes into one vertex buffer.
-	//
 
-	auto totalVertexCount = box.Vertices.size();
+
+	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -659,10 +663,17 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = box.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkOrange);
 	}
-
+	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = cylinder.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkRed); // Tower color
+	}
 
 	std::vector<std::uint16_t> indices;
+
 	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
+
+	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
 
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -689,7 +700,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->IndexBufferByteSize = ibByteSize;
 
 	geo->DrawArgs["box"] = boxSubmesh;
-
+	geo->DrawArgs["cylinder"] = cylinderSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
