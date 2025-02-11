@@ -624,7 +624,7 @@ void ShapesApp::BuildShapeGeometry()
 
 
 	// box geometry for castle's walls
-	GeometryGenerator::MeshData box = geoGen.CreateBox(2.0f, 2.0f, 2.0f, 3);
+	GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 3.0f, 1.0f, 3);
 
 	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.5f, 2.0f, 20, 20);
 
@@ -763,6 +763,25 @@ void ShapesApp::BuildRenderItems()
 	float wallHeight = 1.0f;
 	float towerHeight = 2.0f;
 
+	// Create four towers (cylinders) at the corners
+	for (int i = 0; i < 4; ++i)
+	{
+		auto cylinderRitem = std::make_unique<RenderItem>();
+		XMFLOAT3 towerPosition;
+		if (i == 0) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-left
+		else if (i == 1) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-right
+		else if (i == 2) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-left
+		else if (i == 3) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-right
+
+		XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.0f, towerHeight, 1.0f) * XMMatrixTranslation(towerPosition.x, towerPosition.y, towerPosition.z));
+		cylinderRitem->ObjCBIndex = i;
+		cylinderRitem->Geo = mGeometries["shapeGeo"].get();
+		cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
+		cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+		cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(cylinderRitem));
+	}
 	// (BOX GEOMETRY )Create walls  connecting the towers
 	int wallIndex = 4; 
 	for (int i = 0; i < 4; ++i)
