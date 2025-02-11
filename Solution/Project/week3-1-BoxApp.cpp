@@ -619,28 +619,23 @@ void ShapesApp::BuildShadersAndInputLayout()
 void ShapesApp::BuildShapeGeometry()
 {
 
-	// Assignment 1 build a castle
-	//GeometryGenerator is a utility class for generating simple geometric shapes like grids, sphere, cylinders, and boxes
+
 	GeometryGenerator geoGen;
-	//The MeshData structure is a simple structure nested inside GeometryGenerator that stores a vertex and index list
+
+
+	// box geometry for castle's walls
 	GeometryGenerator::MeshData box = geoGen.CreateBox(2.0f, 2.0f, 2.0f, 3);
 
 
-	//
-	// We are concatenating all the geometry into one big vertex/index buffer.  So
-	// define the regions in the buffer each submesh covers.
-	//
 
-	// Cache the vertex offsets to each object in the concatenated vertex buffer.
 	UINT boxVertexOffset = 0;
 
 
-	// Cache the starting index for each object in the concatenated index buffer.
+	
 	UINT boxIndexOffset = 0;
 
 
-	// Define the SubmeshGeometry that cover different 
-	// regions of the vertex/index buffers.
+	
 
 	SubmeshGeometry boxSubmesh;
 	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
@@ -752,21 +747,52 @@ void ShapesApp::BuildFrameResources()
 
 void ShapesApp::BuildRenderItems()
 {
-	// Assignment 1 build a castle
-	auto boxRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, 0.5f, 0.0f));
-	boxRitem->ObjCBIndex = 0;
-	boxRitem->Geo = mGeometries["shapeGeo"].get();
-	boxRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;  //36
-	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation; //0
-	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation; //0
-	mAllRitems.push_back(std::move(boxRitem));
+	float castleWidth = 5.0f;
+	float castleDepth = 5.0f;
+	float wallHeight = 1.0f;
+	float towerHeight = 2.0f;
+
+	// (BOX GEOMETRY )Create walls  connecting the towers
+	int wallIndex = 4; 
+	for (int i = 0; i < 4; ++i)
+	{
+		auto boxRitem = std::make_unique<RenderItem>();
+		XMFLOAT3 wallPosition;
+		XMFLOAT3 wallScale;
+		if (i == 0) // Front wall
+		{
+			wallPosition = XMFLOAT3(0.0f, wallHeight / 2, -castleDepth / 2);
+			wallScale = XMFLOAT3(castleWidth, wallHeight, 0.2f);
+		}
+		else if (i == 1) // Right wall
+		{
+			wallPosition = XMFLOAT3(castleWidth / 2, wallHeight / 2, 0.0f);
+			wallScale = XMFLOAT3(0.2f, wallHeight, castleDepth);
+		}
+		else if (i == 2) // Back wall
+		{
+			wallPosition = XMFLOAT3(0.0f, wallHeight / 2, castleDepth / 2);
+			wallScale = XMFLOAT3(castleWidth, wallHeight, 0.2f);
+		}
+		else if (i == 3) // Left wall
+		{
+			wallPosition = XMFLOAT3(-castleWidth / 2, wallHeight / 2, 0.0f);
+			wallScale = XMFLOAT3(0.2f, wallHeight, castleDepth);
+		}
+
+		XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(wallScale.x, wallScale.y, wallScale.z) * XMMatrixTranslation(wallPosition.x, wallPosition.y, wallPosition.z));
+		boxRitem->ObjCBIndex = wallIndex++;
+		boxRitem->Geo = mGeometries["shapeGeo"].get();
+		boxRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
+		boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
+		boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(boxRitem));
+	}
 
 
-	// All the render items are opaque.
-	//Our application will maintain lists of render items based on how they need to be
-	//drawn; that is, render items that need different PSOs will be kept in different lists.
+
+
 	for (auto& e : mAllRitems)
 		mOpaqueRitems.push_back(e.get());
 }
