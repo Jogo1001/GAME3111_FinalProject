@@ -635,16 +635,18 @@ void ShapesApp::BuildShapeGeometry()
 	// create a grid for land 
 	GeometryGenerator::MeshData grid = geoGen.CreateGrid(4.0f, 20.0f, 40, 40);
 
+	// create a grid for rooftop
+	GeometryGenerator::MeshData rooftop = geoGen.CreateGrid(4.0f, 5.0f, 260, 260);
 
 	UINT boxVertexOffset = 0;
 	UINT cylinderVertexOffset = (UINT)box.Vertices.size();
 	UINT gridVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
-	
+	UINT roofVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
 	
 	UINT boxIndexOffset = 0;
 	UINT cylinderIndexOffset = (UINT)box.Indices32.size();
 	UINT gridIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
-
+	UINT roofIndexOffset = gridIndexOffset + (UINT)grid.Vertices.size();
 
 	
 
@@ -662,6 +664,11 @@ void ShapesApp::BuildShapeGeometry()
 	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
 	gridSubmesh.StartIndexLocation = gridIndexOffset;
 	gridSubmesh.BaseVertexLocation = gridVertexOffset;
+
+	SubmeshGeometry roofSubmesh;
+	roofSubmesh.IndexCount = (UINT)rooftop.Indices32.size();
+	roofSubmesh.StartIndexLocation = roofVertexOffset;
+	roofSubmesh.BaseVertexLocation = roofVertexOffset;
 
 	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size();
 
@@ -684,7 +691,11 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = grid.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::Green); // Grass color
 	}
-
+	for (size_t i = 0; i < rooftop.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = rooftop.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Yellow); // roof color
+	}
 
 	std::vector<std::uint16_t> indices;
 
@@ -693,6 +704,8 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
 
 	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
+
+	indices.insert(indices.end(), std::begin(rooftop.GetIndices16()), std::end(rooftop.GetIndices16()));
 
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -721,6 +734,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["box"] = boxSubmesh;
 	geo->DrawArgs["grid"] = gridSubmesh;
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
+	geo->DrawArgs["rooftop"] = roofSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
@@ -840,7 +854,17 @@ void ShapesApp::BuildRenderItems()
 		mAllRitems.push_back(std::move(boxRitem));
 	}
 
-
+	float gridYOffset = -1.0f;
+	auto gridRitem = std::make_unique<RenderItem>();
+	XMStoreFloat4x4(&gridRitem->World,
+		XMMatrixTranslation(0.0f, gridYOffset, 0.0f) * XMMatrixScaling(5.0f, 1.0f, 1.0f));
+	gridRitem->ObjCBIndex = (UINT)mAllRitems.size();
+	gridRitem->Geo = mGeometries["shapeGeo"].get();
+	gridRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
+	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
+	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(gridRitem));
 
 
 	for (auto& e : mAllRitems)
