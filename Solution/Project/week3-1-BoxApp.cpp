@@ -626,16 +626,24 @@ void ShapesApp::BuildShapeGeometry()
 	// box geometry for castle's walls
 	GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 3.0f, 1.0f, 3);
 
+	//create a box for door
+	GeometryGenerator::MeshData door = geoGen.CreateBox(1.0f, 2.0f, 1.0f, 3);
+
+	//towers
 	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.5f, 2.0f, 20, 20);
+
+	// create a grid for land 
+	GeometryGenerator::MeshData grid = geoGen.CreateGrid(4.0f, 20.0f, 40, 40);
 
 
 	UINT boxVertexOffset = 0;
 	UINT cylinderVertexOffset = (UINT)box.Vertices.size();
+	UINT gridVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
 	
 	
 	UINT boxIndexOffset = 0;
 	UINT cylinderIndexOffset = (UINT)box.Indices32.size();
-	
+	UINT gridIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
 
 
 	
@@ -650,7 +658,10 @@ void ShapesApp::BuildShapeGeometry()
 	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
 	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
 
-
+	SubmeshGeometry gridSubmesh;
+	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
+	gridSubmesh.StartIndexLocation = gridIndexOffset;
+	gridSubmesh.BaseVertexLocation = gridVertexOffset;
 
 	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size();
 
@@ -661,19 +672,27 @@ void ShapesApp::BuildShapeGeometry()
 	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = box.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkOrange);
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkOrange); // wall color
 	}
 	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = cylinder.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkRed); // Tower color
 	}
+	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = grid.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Green); // Grass color
+	}
+
 
 	std::vector<std::uint16_t> indices;
 
 	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
 
 	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
+
+	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
 
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -700,6 +719,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->IndexBufferByteSize = ibByteSize;
 
 	geo->DrawArgs["box"] = boxSubmesh;
+	geo->DrawArgs["grid"] = gridSubmesh;
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
