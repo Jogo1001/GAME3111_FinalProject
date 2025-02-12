@@ -642,11 +642,13 @@ void ShapesApp::BuildShapeGeometry()
 	UINT cylinderVertexOffset = (UINT)box.Vertices.size();
 	UINT gridVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
 	UINT roofVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
+	UINT doorVertexOffset = boxVertexOffset + (UINT)box.Vertices.size() + (UINT)cylinder.Vertices.size() + (UINT)grid.Vertices.size() + (UINT)rooftop.Vertices.size();
 	
 	UINT boxIndexOffset = 0;
 	UINT cylinderIndexOffset = (UINT)box.Indices32.size();
 	UINT gridIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
 	UINT roofIndexOffset = gridIndexOffset + (UINT)grid.Vertices.size();
+	UINT doorIndexOffset = boxIndexOffset + (UINT)box.Indices32.size() + (UINT)cylinder.Indices32.size() + (UINT)grid.Indices32.size() + (UINT)rooftop.Indices32.size();
 
 	
 
@@ -670,7 +672,12 @@ void ShapesApp::BuildShapeGeometry()
 	roofSubmesh.StartIndexLocation = roofVertexOffset;
 	roofSubmesh.BaseVertexLocation = roofVertexOffset;
 
-	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size() + rooftop.Vertices.size();
+	SubmeshGeometry doorSubmesh;
+	doorSubmesh.IndexCount = (UINT)door.Indices32.size();
+	doorSubmesh.StartIndexLocation = doorIndexOffset;
+	doorSubmesh.BaseVertexLocation = doorVertexOffset;
+
+	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size() + rooftop.Vertices.size() + door.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -696,6 +703,11 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = rooftop.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::Yellow); // roof color
 	}
+	for (size_t i = 0; i < door.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = door.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Black); // door color
+	}
 
 	std::vector<std::uint16_t> indices;
 
@@ -706,6 +718,8 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
 
 	indices.insert(indices.end(), std::begin(rooftop.GetIndices16()), std::end(rooftop.GetIndices16()));
+
+	indices.insert(indices.end(), std::begin(door.GetIndices16()), std::end(door.GetIndices16()));
 
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -735,6 +749,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["grid"] = gridSubmesh;
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
 	geo->DrawArgs["rooftop"] = roofSubmesh;
+	geo->DrawArgs["door"] = doorSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
