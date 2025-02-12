@@ -868,7 +868,21 @@ void ShapesApp::BuildRenderItems()
 		boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
 		mAllRitems.push_back(std::move(boxRitem));
 	}
+	// Create a door in the front wall
+	auto doorRitem = std::make_unique<RenderItem>();
+	XMFLOAT3 doorPosition = XMFLOAT3(0.0f, wallHeight / 2, -castleDepth / 2 + 0.1f); // Position it slightly inside the front wall
+	XMFLOAT3 doorScale = XMFLOAT3(1.0f, 0.7f, 0.5f); // A smaller scale for the door
+	XMStoreFloat4x4(&doorRitem->World, XMMatrixScaling(doorScale.x, doorScale.y, doorScale.z) * XMMatrixTranslation(doorPosition.x, doorPosition.y - 0.83, doorPosition.z));
+	doorRitem->ObjCBIndex = wallIndex++;
+	doorRitem->Geo = mGeometries["shapeGeo"].get();
+	doorRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	doorRitem->IndexCount = doorRitem->Geo->DrawArgs["door"].IndexCount;
+	doorRitem->StartIndexLocation = doorRitem->Geo->DrawArgs["door"].StartIndexLocation;
+	doorRitem->BaseVertexLocation = doorRitem->Geo->DrawArgs["door"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(doorRitem));
 
+
+	//grid land
 	float gridYOffset = -1.0f;
 	auto gridRitem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&gridRitem->World,
