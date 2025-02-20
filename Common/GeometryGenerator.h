@@ -109,6 +109,10 @@ public:
 	/// Creates a quad aligned with the screen.  This is useful for postprocessing and screen effects.
 	///</summary>
     MeshData CreateQuad(float x, float y, float w, float h, float depth);
+
+	GeometryGenerator::MeshData CreateCone(float bottomRadius, float height, uint32_t sliceCount);
+
+
 	void Subdivide(MeshData& meshData);
 private:
 	

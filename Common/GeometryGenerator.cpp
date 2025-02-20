@@ -655,3 +655,49 @@ GeometryGenerator::MeshData GeometryGenerator::CreateQuad(float x, float y, floa
 
     return meshData;
 }
+GeometryGenerator::MeshData GeometryGenerator::CreateCone(float bottomRadius, float height, uint32_t sliceCount)
+{
+	MeshData meshData;
+
+	
+	if (sliceCount < 3) sliceCount = 3; 
+
+
+	Vertex apexVertex;
+	apexVertex.Position = XMFLOAT3(0.0f, height, 0.0f); 
+	meshData.Vertices.push_back(apexVertex);
+
+	
+	float angleStep = 2.0f * XM_PI / sliceCount; 
+	for (uint32_t i = 0; i < sliceCount; ++i)
+	{
+		float angle = i * angleStep;
+		Vertex vertex;
+		vertex.Position = XMFLOAT3(bottomRadius * cos(angle), 0.0f, bottomRadius * sin(angle)); 
+		meshData.Vertices.push_back(vertex);
+	}
+
+	
+	for (uint32_t i = 1; i <= sliceCount; ++i)
+	{
+		
+		uint32_t next = (i % sliceCount) + 1;
+
+		
+		meshData.Indices32.push_back(0); 
+		meshData.Indices32.push_back(i); 
+		meshData.Indices32.push_back(next); 
+	}
+
+	
+	for (uint32_t i = 1; i < sliceCount - 1; ++i)
+	{
+		meshData.Indices32.push_back(i);
+		meshData.Indices32.push_back(i + 1);
+		meshData.Indices32.push_back(sliceCount); 
+	}
+
+	
+	return meshData;
+}
+

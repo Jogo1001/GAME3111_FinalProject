@@ -643,13 +643,19 @@ void ShapesApp::BuildShapeGeometry()
 	// Creates a  grid for a  rooftop
 	GeometryGenerator::MeshData rooftop = geoGen.CreateGrid(4.0f, 5.0f, 260, 260);
 
+	GeometryGenerator::MeshData cone = geoGen.CreateCone(0.5f, 2.0f, 20);
+
+	
 
 	// Vertex offsets for different geometry pieces
 	UINT boxVertexOffset = 0;
 	UINT cylinderVertexOffset = (UINT)box.Vertices.size();
 	UINT gridVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
 	UINT roofVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
+	//UINT doorVertexOffset = roofVertexOffset + (UINT)rooftop.Vertices.size();
 	UINT doorVertexOffset = boxVertexOffset + (UINT)box.Vertices.size() + (UINT)cylinder.Vertices.size() + (UINT)grid.Vertices.size() + (UINT)rooftop.Vertices.size();
+	UINT coneVertexOffset = doorVertexOffset + (UINT)door.Vertices.size(); 
+	
 	
 
 	// Index offsets for different geometry pieces
@@ -657,7 +663,10 @@ void ShapesApp::BuildShapeGeometry()
 	UINT cylinderIndexOffset = (UINT)box.Indices32.size();
 	UINT gridIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
 	UINT roofIndexOffset = gridIndexOffset + (UINT)grid.Vertices.size();
+	//UINT doorIndexOffset = roofIndexOffset + (UINT)rooftop.Indices32.size();
 	UINT doorIndexOffset = boxIndexOffset + (UINT)box.Indices32.size() + (UINT)cylinder.Indices32.size() + (UINT)grid.Indices32.size() + (UINT)rooftop.Indices32.size();
+	UINT coneIndexOffset = doorIndexOffset + (UINT)door.Indices32.size();
+	
 
 	
 
@@ -687,9 +696,14 @@ void ShapesApp::BuildShapeGeometry()
 	doorSubmesh.StartIndexLocation = doorIndexOffset;
 	doorSubmesh.BaseVertexLocation = doorVertexOffset;
 
+	SubmeshGeometry coneSubmesh;
+	coneSubmesh.IndexCount = (UINT)cone.Indices32.size();
+	coneSubmesh.StartIndexLocation = coneIndexOffset;
+	coneSubmesh.BaseVertexLocation = coneVertexOffset;
+
 
 	// Total vertex count
-	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size() + rooftop.Vertices.size() + door.Vertices.size();
+	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size() + rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -727,7 +741,11 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = door.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::Black); // door color
 	}
-
+	for (size_t i = 0; i < cone.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = cone.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Orange); // cone color
+	}
 
 	// Combine all indices into one buffer
 	std::vector<std::uint16_t> indices;
@@ -736,6 +754,7 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
 	indices.insert(indices.end(), std::begin(rooftop.GetIndices16()), std::end(rooftop.GetIndices16()));
 	indices.insert(indices.end(), std::begin(door.GetIndices16()), std::end(door.GetIndices16()));
+	indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
 
 	// Upload combined geometry to GPU
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -772,6 +791,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
 	geo->DrawArgs["rooftop"] = roofSubmesh;
 	geo->DrawArgs["door"] = doorSubmesh;
+	geo->DrawArgs["cone"] = coneSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
@@ -837,28 +857,28 @@ void ShapesApp::BuildRenderItems()
 	float towerHeight = 2.0f;
 
 	// Create four towers (cylinders) at the corners
-	for (int i = 0; i < 4; ++i)
-	{
-		auto cylinderRitem = std::make_unique<RenderItem>();
-		XMFLOAT3 towerPosition;
-		// Position towers at each corner
-		if (i == 0) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-left
-		else if (i == 1) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-right
-		else if (i == 2) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-left
-		else if (i == 3) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-right
+	//for (int i = 0; i < 4; ++i)
+	//{
+	//	auto cylinderRitem = std::make_unique<RenderItem>();
+	//	XMFLOAT3 towerPosition;
+	//	// Position towers at each corner
+	//	if (i == 0) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-left
+	//	else if (i == 1) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-right
+	//	else if (i == 2) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-left
+	//	else if (i == 3) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-right
 
-		// Scale and position tower
-		XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.0f, towerHeight, 1.0f) * XMMatrixTranslation(towerPosition.x, towerPosition.y, towerPosition.z));
-		cylinderRitem->ObjCBIndex = i;
+	//	// Scale and position tower
+	//	XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.0f, towerHeight, 1.0f) * XMMatrixTranslation(towerPosition.x, towerPosition.y, towerPosition.z));
+	//	cylinderRitem->ObjCBIndex = i;
 
-		// Link to cylinder geometry
-		cylinderRitem->Geo = mGeometries["shapeGeo"].get();
-		cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-		mAllRitems.push_back(std::move(cylinderRitem));
-	}
+	//	// Link to cylinder geometry
+	//	cylinderRitem->Geo = mGeometries["shapeGeo"].get();
+	//	cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	//	cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
+	//	cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+	//	cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+	//	mAllRitems.push_back(std::move(cylinderRitem));
+	//}
 	// (BOX GEOMETRY ) Create walls between towers
 	int wallIndex = 4; 
 	for (int i = 0; i < 4; ++i)
@@ -898,6 +918,52 @@ void ShapesApp::BuildRenderItems()
 		boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
 		mAllRitems.push_back(std::move(boxRitem));
 	}
+	
+	// Create four towers (cylinders) at the corners and place cones on top
+	for (int i = 0; i < 4; ++i)
+	{
+		// Create a cylinder (tower)
+		auto cylinderRitem = std::make_unique<RenderItem>();
+		XMFLOAT3 towerPosition;
+		if (i == 0) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-left
+		else if (i == 1) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-right
+		else if (i == 2) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-left
+		else if (i == 3) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-right
+
+		XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.0f, towerHeight, 1.0f) * XMMatrixTranslation(towerPosition.x, towerPosition.y, towerPosition.z));
+		cylinderRitem->ObjCBIndex = i;
+
+		// Link to cylinder geometry
+		cylinderRitem->Geo = mGeometries["shapeGeo"].get();
+		cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
+		cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+		cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(cylinderRitem));
+
+		// Now create a cone on top of the cylinder
+		auto coneRitem = std::make_unique<RenderItem>();
+		// Position the cone just above the cylinder
+		XMFLOAT3 conePosition = XMFLOAT3(towerPosition.x, towerPosition.y + towerHeight / 2 + 1.0f, towerPosition.z); // Adjust the height to be just above the cylinder
+		XMFLOAT3 coneScale = XMFLOAT3(1.0f, 1.0f, 1.0f); // Scale for the cone (you can adjust this)
+
+		// Set the cone position
+		XMStoreFloat4x4(&coneRitem->World,
+			XMMatrixScaling(coneScale.x, coneScale.y, coneScale.z) *
+			XMMatrixTranslation(conePosition.x, conePosition.y, conePosition.z));
+
+		coneRitem->ObjCBIndex = wallIndex++;  // Increment index
+		coneRitem->Geo = mGeometries["shapeGeo"].get();
+		coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
+		coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
+		coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(coneRitem));
+	}
+
+
+
+
 	// Create a door in the front wall
 	auto doorRitem = std::make_unique<RenderItem>();
 	XMFLOAT3 doorPosition = XMFLOAT3(0.0f, wallHeight / 2, -castleDepth / 2 + 0.1f); // Position in front wall
@@ -940,6 +1006,8 @@ void ShapesApp::BuildRenderItems()
 	roofRitem->StartIndexLocation = roofRitem->Geo->DrawArgs["rooftop"].StartIndexLocation;
 	roofRitem->BaseVertexLocation = roofRitem->Geo->DrawArgs["rooftop"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(roofRitem));
+
+
 
 	for (auto& e : mAllRitems)
 		mOpaqueRitems.push_back(e.get());
