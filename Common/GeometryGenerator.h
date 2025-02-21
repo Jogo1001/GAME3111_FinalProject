@@ -112,6 +112,8 @@ public:
 
 	GeometryGenerator::MeshData CreateCone(float bottomRadius, float height, uint32_t sliceCount);
 
+	GeometryGenerator::MeshData CreateWedge(float radius, float height, float angle, uint32 numSubdivisions);
+
 
 	void Subdivide(MeshData& meshData);
 private:

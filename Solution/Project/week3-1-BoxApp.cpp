@@ -645,6 +645,9 @@ void ShapesApp::BuildShapeGeometry()
 
 	GeometryGenerator::MeshData cone = geoGen.CreateCone(0.5f, 2.0f, 20);
 
+	GeometryGenerator::MeshData wedge = geoGen.CreateWedge(1.0f, 2.0f, 1.0f, 20);
+
+
 	
 
 	// Vertex offsets for different geometry pieces
@@ -655,6 +658,8 @@ void ShapesApp::BuildShapeGeometry()
 	//UINT doorVertexOffset = roofVertexOffset + (UINT)rooftop.Vertices.size();
 	UINT doorVertexOffset = boxVertexOffset + (UINT)box.Vertices.size() + (UINT)cylinder.Vertices.size() + (UINT)grid.Vertices.size() + (UINT)rooftop.Vertices.size();
 	UINT coneVertexOffset = doorVertexOffset + (UINT)door.Vertices.size(); 
+	UINT wedgeVertexOffset = coneVertexOffset + (UINT)cone.Vertices.size();
+
 	
 	
 
@@ -666,6 +671,7 @@ void ShapesApp::BuildShapeGeometry()
 	//UINT doorIndexOffset = roofIndexOffset + (UINT)rooftop.Indices32.size();
 	UINT doorIndexOffset = boxIndexOffset + (UINT)box.Indices32.size() + (UINT)cylinder.Indices32.size() + (UINT)grid.Indices32.size() + (UINT)rooftop.Indices32.size();
 	UINT coneIndexOffset = doorIndexOffset + (UINT)door.Indices32.size();
+	UINT wedgeIndexOffset = coneIndexOffset + (UINT)cone.Indices32.size();
 	
 
 	
@@ -701,9 +707,15 @@ void ShapesApp::BuildShapeGeometry()
 	coneSubmesh.StartIndexLocation = coneIndexOffset;
 	coneSubmesh.BaseVertexLocation = coneVertexOffset;
 
+	SubmeshGeometry wedgeSubmesh;
+	wedgeSubmesh.IndexCount = (UINT)wedge.Indices32.size();
+	wedgeSubmesh.StartIndexLocation = wedgeIndexOffset;
+	wedgeSubmesh.BaseVertexLocation = wedgeVertexOffset;
+
 
 	// Total vertex count
-	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size() + rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size();
+	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size()
+		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + + wedge.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -746,6 +758,11 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = cone.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::Orange); // cone color
 	}
+	for (size_t i = 0; i < wedge.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = wedge.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkCyan); // Wedge color (e.g., purple)
+	}
 
 	// Combine all indices into one buffer
 	std::vector<std::uint16_t> indices;
@@ -755,6 +772,8 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(rooftop.GetIndices16()), std::end(rooftop.GetIndices16()));
 	indices.insert(indices.end(), std::begin(door.GetIndices16()), std::end(door.GetIndices16()));
 	indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
+	indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
+
 
 	// Upload combined geometry to GPU
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -792,6 +811,8 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["rooftop"] = roofSubmesh;
 	geo->DrawArgs["door"] = doorSubmesh;
 	geo->DrawArgs["cone"] = coneSubmesh;
+	geo->DrawArgs["wedge"] = wedgeSubmesh;
+
 
 	mGeometries[geo->Name] = std::move(geo);
 }
@@ -856,29 +877,6 @@ void ShapesApp::BuildRenderItems()
 	float wallHeight = 1.0f;
 	float towerHeight = 2.0f;
 
-	// Create four towers (cylinders) at the corners
-	//for (int i = 0; i < 4; ++i)
-	//{
-	//	auto cylinderRitem = std::make_unique<RenderItem>();
-	//	XMFLOAT3 towerPosition;
-	//	// Position towers at each corner
-	//	if (i == 0) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-left
-	//	else if (i == 1) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, -castleDepth / 2); // Front-right
-	//	else if (i == 2) towerPosition = XMFLOAT3(-castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-left
-	//	else if (i == 3) towerPosition = XMFLOAT3(castleWidth / 2, towerHeight / 2, castleDepth / 2); // Back-right
-
-	//	// Scale and position tower
-	//	XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.0f, towerHeight, 1.0f) * XMMatrixTranslation(towerPosition.x, towerPosition.y, towerPosition.z));
-	//	cylinderRitem->ObjCBIndex = i;
-
-	//	// Link to cylinder geometry
-	//	cylinderRitem->Geo = mGeometries["shapeGeo"].get();
-	//	cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
-	//	cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-	//	cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-	//	mAllRitems.push_back(std::move(cylinderRitem));
-	//}
 	// (BOX GEOMETRY ) Create walls between towers
 	int wallIndex = 4; 
 	for (int i = 0; i < 4; ++i)
@@ -977,6 +975,42 @@ void ShapesApp::BuildRenderItems()
 	doorRitem->StartIndexLocation = doorRitem->Geo->DrawArgs["door"].StartIndexLocation;
 	doorRitem->BaseVertexLocation = doorRitem->Geo->DrawArgs["door"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(doorRitem));
+
+	// Create a wedge on the left side of the castle (Fence post)
+	auto leftWedgeRitem = std::make_unique<RenderItem>();
+	XMFLOAT3 leftWedgePosition = XMFLOAT3(-castleWidth / 2 - 1.0f, wallHeight / 2, -castleDepth / 2 + 0.1f); // Adjusted position
+	XMFLOAT3 leftWedgeScale = XMFLOAT3(0.5f, wallHeight, 0.5f); // Smaller wedge scale
+	XMStoreFloat4x4(&leftWedgeRitem->World,
+		XMMatrixScaling(leftWedgeScale.x, leftWedgeScale.y, leftWedgeScale.z) *
+		XMMatrixTranslation(leftWedgePosition.x, leftWedgePosition.y, leftWedgePosition.z) *
+		XMMatrixRotationY(XMConvertToRadians(-15.0f))); // Rotate for fence-like slant
+
+	leftWedgeRitem->ObjCBIndex = wallIndex++;
+	leftWedgeRitem->Geo = mGeometries["shapeGeo"].get();
+	leftWedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	leftWedgeRitem->IndexCount = leftWedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
+	leftWedgeRitem->StartIndexLocation = leftWedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
+	leftWedgeRitem->BaseVertexLocation = leftWedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(leftWedgeRitem));
+
+	// Create a wedge on the right side of the castle (Fence post)
+	auto rightWedgeRitem = std::make_unique<RenderItem>();
+	XMFLOAT3 rightWedgePosition = XMFLOAT3(castleWidth / 2 + 1.0f, wallHeight / 2, -castleDepth / 2 + 0.1f); // Adjusted position
+	XMFLOAT3 rightWedgeScale = XMFLOAT3(0.5f, wallHeight, 0.5f); // Smaller wedge scale
+	XMStoreFloat4x4(&rightWedgeRitem->World,
+		XMMatrixScaling(rightWedgeScale.x, rightWedgeScale.y, rightWedgeScale.z) *
+		XMMatrixTranslation(rightWedgePosition.x, rightWedgePosition.y, rightWedgePosition.z) *
+		XMMatrixRotationY(XMConvertToRadians(15.0f))); // Rotate for fence-like slant
+
+	rightWedgeRitem->ObjCBIndex = wallIndex++;
+	rightWedgeRitem->Geo = mGeometries["shapeGeo"].get();
+	rightWedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	rightWedgeRitem->IndexCount = rightWedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
+	rightWedgeRitem->StartIndexLocation = rightWedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
+	rightWedgeRitem->BaseVertexLocation = rightWedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(rightWedgeRitem));
+
+
 
 
 	// Create ground plane using grid

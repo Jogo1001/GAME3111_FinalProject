@@ -700,4 +700,55 @@ GeometryGenerator::MeshData GeometryGenerator::CreateCone(float bottomRadius, fl
 	
 	return meshData;
 }
+GeometryGenerator::MeshData GeometryGenerator::CreateWedge(float width, float height, float depth, uint32 numSubdivisions)
+{
+	MeshData meshData;
+
+	
+	std::vector<Vertex> vertices;
+
+
+	vertices.push_back(Vertex(-width / 2, -height / 2, -depth / 2, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	
+	vertices.push_back(Vertex(width / 2, -height / 2, -depth / 2, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f));
+	
+	vertices.push_back(Vertex(0.0f, -height / 2, depth / 2, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 1.0f));
+
+
+	vertices.push_back(Vertex(-width / 2, height / 2, -depth / 2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f));
+
+	vertices.push_back(Vertex(width / 2, height / 2, -depth / 2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f));
+	
+	vertices.push_back(Vertex(0.0f, height / 2, depth / 2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 1.0f));
+
+	meshData.Vertices = vertices;
+
+	
+	std::vector<uint32> indices = {
+		// Bottom face (Counter-clockwise winding)
+		0, 2, 1,
+
+		// Top face (Counter-clockwise winding)
+		3, 4, 5,
+
+		// Front face (Counter-clockwise winding)
+		2, 3, 5,
+		2, 5, 4,
+
+		// Left face (Counter-clockwise winding)
+		0, 4, 3,
+		0, 1, 4,
+
+		// Right face (Counter-clockwise winding)
+		1, 2, 5,
+		1, 5, 4
+	};
+
+	meshData.Indices32 = indices;
+
+	return meshData;
+}
+
+
+
 
