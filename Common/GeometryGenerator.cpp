@@ -748,7 +748,66 @@ GeometryGenerator::MeshData GeometryGenerator::CreateWedge(float width, float he
 
 	return meshData;
 }
+GeometryGenerator::MeshData GeometryGenerator::CreateTorus(float radius, float tubeRadius, uint32 sliceCount, uint32 tubeSliceCount)
+{
+	MeshData meshData;
 
+	// Calculate the number of vertices and indices
+	uint32 vertexCount = (sliceCount + 1) * (tubeSliceCount + 1);
+	uint32 indexCount = sliceCount * tubeSliceCount * 6;
+
+	meshData.Vertices.resize(vertexCount);
+	meshData.Indices32.resize(indexCount);
+
+	// Generate vertices
+	float sliceAngleStep = 2.0f * XM_PI / sliceCount;
+	float tubeSliceAngleStep = 2.0f * XM_PI / tubeSliceCount;
+
+	for (uint32 i = 0; i <= sliceCount; ++i)
+	{
+		float sliceAngle = i * sliceAngleStep;
+		XMVECTOR sliceNormal = XMVectorSet(cosf(sliceAngle), 0.0f, sinf(sliceAngle), 0.0f);
+		XMVECTOR sliceCenter = radius * sliceNormal;
+
+		for (uint32 j = 0; j <= tubeSliceCount; ++j)
+		{
+			float tubeSliceAngle = j * tubeSliceAngleStep;
+			XMVECTOR tubeNormal = XMVectorSet(cosf(tubeSliceAngle), sinf(tubeSliceAngle), 0.0f, 0.0f);
+			XMVECTOR position = sliceCenter + tubeRadius * tubeNormal;
+
+			Vertex vertex;
+			XMStoreFloat3(&vertex.Position, position);
+			XMStoreFloat3(&vertex.Normal, XMVector3Normalize(position - sliceCenter));
+			XMStoreFloat3(&vertex.TangentU, XMVector3Normalize(XMVectorSet(-sinf(sliceAngle), 0.0f, cosf(sliceAngle), 0.0f)));
+
+			vertex.TexC.x = (float)i / sliceCount;
+			vertex.TexC.y = (float)j / tubeSliceCount;
+
+			meshData.Vertices[i * (tubeSliceCount + 1) + j] = vertex;
+		}
+	}
+
+	// Generate indices
+	uint32 index = 0;
+	for (uint32 i = 0; i < sliceCount; ++i)
+	{
+		for (uint32 j = 0; j < tubeSliceCount; ++j)
+		{
+			uint32 nextI = (i + 1) % (sliceCount + 1);
+			uint32 nextJ = (j + 1) % (tubeSliceCount + 1);
+
+			meshData.Indices32[index++] = i * (tubeSliceCount + 1) + j;
+			meshData.Indices32[index++] = nextI * (tubeSliceCount + 1) + j;
+			meshData.Indices32[index++] = i * (tubeSliceCount + 1) + nextJ;
+
+			meshData.Indices32[index++] = nextI * (tubeSliceCount + 1) + j;
+			meshData.Indices32[index++] = nextI * (tubeSliceCount + 1) + nextJ;
+			meshData.Indices32[index++] = i * (tubeSliceCount + 1) + nextJ;
+		}
+	}
+
+	return meshData;
+}
 
 
 

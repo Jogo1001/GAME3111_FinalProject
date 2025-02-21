@@ -643,9 +643,14 @@ void ShapesApp::BuildShapeGeometry()
 	// Creates a  grid for a  rooftop
 	GeometryGenerator::MeshData rooftop = geoGen.CreateGrid(4.0f, 5.0f, 260, 260);
 
+
+
+	//new geometry
 	GeometryGenerator::MeshData cone = geoGen.CreateCone(0.5f, 2.0f, 20);
 
 	GeometryGenerator::MeshData wedge = geoGen.CreateWedge(1.0f, 2.0f, 1.0f, 20);
+
+	GeometryGenerator::MeshData torus = geoGen.CreateTorus(2.0f, 0.5f, 32, 16);
 
 
 	
@@ -655,10 +660,10 @@ void ShapesApp::BuildShapeGeometry()
 	UINT cylinderVertexOffset = (UINT)box.Vertices.size();
 	UINT gridVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
 	UINT roofVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
-	//UINT doorVertexOffset = roofVertexOffset + (UINT)rooftop.Vertices.size();
 	UINT doorVertexOffset = boxVertexOffset + (UINT)box.Vertices.size() + (UINT)cylinder.Vertices.size() + (UINT)grid.Vertices.size() + (UINT)rooftop.Vertices.size();
 	UINT coneVertexOffset = doorVertexOffset + (UINT)door.Vertices.size(); 
 	UINT wedgeVertexOffset = coneVertexOffset + (UINT)cone.Vertices.size();
+	UINT torusVertexOffset = wedgeVertexOffset + (UINT)wedge.Vertices.size();
 
 	
 	
@@ -668,11 +673,10 @@ void ShapesApp::BuildShapeGeometry()
 	UINT cylinderIndexOffset = (UINT)box.Indices32.size();
 	UINT gridIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
 	UINT roofIndexOffset = gridIndexOffset + (UINT)grid.Vertices.size();
-	//UINT doorIndexOffset = roofIndexOffset + (UINT)rooftop.Indices32.size();
 	UINT doorIndexOffset = boxIndexOffset + (UINT)box.Indices32.size() + (UINT)cylinder.Indices32.size() + (UINT)grid.Indices32.size() + (UINT)rooftop.Indices32.size();
 	UINT coneIndexOffset = doorIndexOffset + (UINT)door.Indices32.size();
 	UINT wedgeIndexOffset = coneIndexOffset + (UINT)cone.Indices32.size();
-	
+	UINT torusIndexOffset = wedgeIndexOffset + (UINT)wedge.Indices32.size();
 
 	
 
@@ -713,9 +717,14 @@ void ShapesApp::BuildShapeGeometry()
 	wedgeSubmesh.BaseVertexLocation = wedgeVertexOffset;
 
 
+	SubmeshGeometry torusSubmesh; // Submesh for torus
+	torusSubmesh.IndexCount = (UINT)torus.Indices32.size();
+	torusSubmesh.StartIndexLocation = torusIndexOffset;
+	torusSubmesh.BaseVertexLocation = torusVertexOffset;
+
 	// Total vertex count
 	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size()
-		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + + wedge.Vertices.size();
+		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + wedge.Vertices.size() + torus.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -763,6 +772,12 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = wedge.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkCyan); // Wedge color (e.g., purple)
 	}
+	for (size_t i = 0; i < torus.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = torus.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Purple); // Torus color
+	}
+
 
 	// Combine all indices into one buffer
 	std::vector<std::uint16_t> indices;
@@ -773,7 +788,7 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(door.GetIndices16()), std::end(door.GetIndices16()));
 	indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
 	indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
-
+	indices.insert(indices.end(), std::begin(torus.GetIndices16()), std::end(torus.GetIndices16()));
 
 	// Upload combined geometry to GPU
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -812,6 +827,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["door"] = doorSubmesh;
 	geo->DrawArgs["cone"] = coneSubmesh;
 	geo->DrawArgs["wedge"] = wedgeSubmesh;
+	geo->DrawArgs["torus"] = torusSubmesh;
 
 
 	mGeometries[geo->Name] = std::move(geo);
@@ -950,12 +966,18 @@ void ShapesApp::BuildRenderItems()
 			XMMatrixScaling(coneScale.x, coneScale.y, coneScale.z) *
 			XMMatrixTranslation(conePosition.x, conePosition.y, conePosition.z));
 
+
 		coneRitem->ObjCBIndex = wallIndex++;  // Increment index
 		coneRitem->Geo = mGeometries["shapeGeo"].get();
 		coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
 		coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
 		coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
+
+
+
+
+		/////////////////////////////////////////////////////
 		mAllRitems.push_back(std::move(coneRitem));
 	}
 
@@ -1010,15 +1032,76 @@ void ShapesApp::BuildRenderItems()
 	rightWedgeRitem->BaseVertexLocation = rightWedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(rightWedgeRitem));
 
+	// Create two toruses on the ground plane
+	for (int i = 0; i < 2; ++i)
+	{
+		auto torusRitem = std::make_unique<RenderItem>();
+		XMFLOAT3 torusPosition;
+		XMFLOAT3 torusScale = XMFLOAT3(0.5f, 0.5f, 0.5f); // Scale for the torus
 
+		// Set positions for the two toruses
+		if (i == 0) // First torus
+		{
+			torusPosition = XMFLOAT3(-2.0f, -0.8f, -2.0f); // Adjust Y to be above the ground
+		}
+		else // Second torus
+		{
+			torusPosition = XMFLOAT3(2.0f, -0.8f, -2.0f); // Adjust Y to be above the ground
+		}
 
+		// Set the world matrix for the torus
+		XMStoreFloat4x4(&torusRitem->World,
+			XMMatrixScaling(torusScale.x, torusScale.y, torusScale.z) *
+			XMMatrixTranslation(torusPosition.x, torusPosition.y, torusPosition.z));
+
+		torusRitem->ObjCBIndex = wallIndex++; // Increment index
+		torusRitem->Geo = mGeometries["shapeGeo"].get();
+		torusRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		torusRitem->IndexCount = torusRitem->Geo->DrawArgs["torus"].IndexCount;
+		torusRitem->StartIndexLocation = torusRitem->Geo->DrawArgs["torus"].StartIndexLocation;
+		torusRitem->BaseVertexLocation = torusRitem->Geo->DrawArgs["torus"].BaseVertexLocation;
+
+		mAllRitems.push_back(std::move(torusRitem));
+
+	}
+	for (int i = 0; i < 2; ++i)
+	{
+		auto torusRitem = std::make_unique<RenderItem>();
+		XMFLOAT3 torusPosition;
+		XMFLOAT3 torusScale = XMFLOAT3(0.5f, 0.5f, 0.5f); // Scale for the torus
+
+		// Set positions for the two toruses
+		if (i == 0) // Third torus
+		{
+			torusPosition = XMFLOAT3(-2.0f, -0.8f, 2.0f); // Adjust Y to be above the ground
+		}
+		else // fourth torus
+		{
+			torusPosition = XMFLOAT3(2.0f, -0.8f, 2.0f); // Adjust Y to be above the ground
+		}
+
+		// Set the world matrix for the torus
+		XMStoreFloat4x4(&torusRitem->World,
+			XMMatrixScaling(torusScale.x, torusScale.y, torusScale.z) *
+			XMMatrixTranslation(torusPosition.x, torusPosition.y, torusPosition.z));
+
+		torusRitem->ObjCBIndex = wallIndex++; // Increment index
+		torusRitem->Geo = mGeometries["shapeGeo"].get();
+		torusRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		torusRitem->IndexCount = torusRitem->Geo->DrawArgs["torus"].IndexCount;
+		torusRitem->StartIndexLocation = torusRitem->Geo->DrawArgs["torus"].StartIndexLocation;
+		torusRitem->BaseVertexLocation = torusRitem->Geo->DrawArgs["torus"].BaseVertexLocation;
+
+		mAllRitems.push_back(std::move(torusRitem));
+
+	}
 
 	// Create ground plane using grid
 	float gridYOffset = -1.0f;
 	auto gridRitem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&gridRitem->World,
 		XMMatrixTranslation(0.0f, gridYOffset, 0.0f)  // Position below castle
-		* XMMatrixScaling(5.0f, 1.0f, 1.0f));  // Scale grid to cover area
+		* XMMatrixScaling(3.0f, 1.0f, 1.0f));  // Scale grid to cover area
 	gridRitem->ObjCBIndex = (UINT)mAllRitems.size();
 	gridRitem->Geo = mGeometries["shapeGeo"].get();
 	gridRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;

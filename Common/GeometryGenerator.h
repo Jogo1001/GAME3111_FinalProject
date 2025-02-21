@@ -114,6 +114,8 @@ public:
 
 	GeometryGenerator::MeshData CreateWedge(float radius, float height, float angle, uint32 numSubdivisions);
 
+	GeometryGenerator::MeshData CreateTorus(float radius, float tubeRadius, uint32 sliceCount, uint32 tubeSliceCount);
+
 
 	void Subdivide(MeshData& meshData);
 private:
