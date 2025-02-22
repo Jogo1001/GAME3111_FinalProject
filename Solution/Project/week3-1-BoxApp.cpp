@@ -652,6 +652,10 @@ void ShapesApp::BuildShapeGeometry()
 
 	GeometryGenerator::MeshData torus = geoGen.CreateTorus(2.0f, 0.5f, 32, 16);
 
+	GeometryGenerator::MeshData pyramid = geoGen.CreatePyramid(2.0f, 3.0f, 2.0f);
+
+
+
 
 	
 
@@ -664,6 +668,7 @@ void ShapesApp::BuildShapeGeometry()
 	UINT coneVertexOffset = doorVertexOffset + (UINT)door.Vertices.size(); 
 	UINT wedgeVertexOffset = coneVertexOffset + (UINT)cone.Vertices.size();
 	UINT torusVertexOffset = wedgeVertexOffset + (UINT)wedge.Vertices.size();
+	UINT pyramidVertexOffset = torusVertexOffset + (UINT)torus.Vertices.size();
 
 	
 	
@@ -677,6 +682,7 @@ void ShapesApp::BuildShapeGeometry()
 	UINT coneIndexOffset = doorIndexOffset + (UINT)door.Indices32.size();
 	UINT wedgeIndexOffset = coneIndexOffset + (UINT)cone.Indices32.size();
 	UINT torusIndexOffset = wedgeIndexOffset + (UINT)wedge.Indices32.size();
+	UINT pyramidIndexOffset = torusIndexOffset + (UINT)torus.Indices32.size();
 
 	
 
@@ -722,9 +728,15 @@ void ShapesApp::BuildShapeGeometry()
 	torusSubmesh.StartIndexLocation = torusIndexOffset;
 	torusSubmesh.BaseVertexLocation = torusVertexOffset;
 
+
+	SubmeshGeometry pyramidSubmesh; // Submesh for torus
+	pyramidSubmesh.IndexCount = (UINT)pyramid.Indices32.size();
+	pyramidSubmesh.StartIndexLocation = pyramidIndexOffset;
+	pyramidSubmesh.BaseVertexLocation = pyramidVertexOffset;
+
 	// Total vertex count
 	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size()
-		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + wedge.Vertices.size() + torus.Vertices.size();
+		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + wedge.Vertices.size() + torus.Vertices.size() + pyramid.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -777,7 +789,11 @@ void ShapesApp::BuildShapeGeometry()
 		vertices[k].Pos = torus.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::Purple); // Torus color
 	}
-
+	for (size_t i = 0; i < pyramid.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = pyramid.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Aqua); // Torus color
+	}
 
 	// Combine all indices into one buffer
 	std::vector<std::uint16_t> indices;
@@ -789,6 +805,7 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
 	indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
 	indices.insert(indices.end(), std::begin(torus.GetIndices16()), std::end(torus.GetIndices16()));
+	indices.insert(indices.end(), std::begin(pyramid.GetIndices16()), std::end(pyramid.GetIndices16()));
 
 	// Upload combined geometry to GPU
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -828,6 +845,7 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["cone"] = coneSubmesh;
 	geo->DrawArgs["wedge"] = wedgeSubmesh;
 	geo->DrawArgs["torus"] = torusSubmesh;
+	geo->DrawArgs["pyramid"] = pyramidSubmesh;
 
 
 	mGeometries[geo->Name] = std::move(geo);
@@ -1093,8 +1111,29 @@ void ShapesApp::BuildRenderItems()
 		torusRitem->BaseVertexLocation = torusRitem->Geo->DrawArgs["torus"].BaseVertexLocation;
 
 		mAllRitems.push_back(std::move(torusRitem));
-
 	}
+
+
+	//Create Pyramid
+	auto pyramidItem = std::make_unique<RenderItem>();
+	XMFLOAT3 pyramidPosition = XMFLOAT3(0.0f, 2.0f, 0.0f); // Position for the pyramid
+	XMFLOAT3 pyramidScale = XMFLOAT3(2.6f, 1.0f, 2.6f); // Scale for the pyramid
+
+
+
+	// Set the world matrix for the pyramid
+	XMStoreFloat4x4(&pyramidItem->World,
+		XMMatrixScaling(pyramidScale.x, pyramidScale.y, pyramidScale.z) *
+		XMMatrixTranslation(pyramidPosition.x, pyramidPosition.y, pyramidPosition.z));
+
+	pyramidItem->ObjCBIndex = wallIndex++; // Increment index
+	pyramidItem->Geo = mGeometries["shapeGeo"].get();
+	pyramidItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	pyramidItem->IndexCount = pyramidItem->Geo->DrawArgs["pyramid"].IndexCount;
+	pyramidItem->StartIndexLocation = pyramidItem->Geo->DrawArgs["pyramid"].StartIndexLocation;
+	pyramidItem->BaseVertexLocation = pyramidItem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+
+	mAllRitems.push_back(std::move(pyramidItem));
 
 	// Create ground plane using grid
 	float gridYOffset = -1.0f;
@@ -1110,19 +1149,8 @@ void ShapesApp::BuildRenderItems()
 	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(gridRitem));
 
-	// Create rooftop
-	float roofYOffset = 2.0f; 
-	auto roofRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&roofRitem->World,
-		XMMatrixTranslation(0.0f, roofYOffset, 0.0f)  // Position above castle
-		* XMMatrixScaling(1.3f, 1.0f, 1.0f));  // Scale rooftop
-	roofRitem->ObjCBIndex = (UINT)mAllRitems.size();
-	roofRitem->Geo = mGeometries["shapeGeo"].get();
-	roofRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	roofRitem->IndexCount = roofRitem->Geo->DrawArgs["rooftop"].IndexCount;
-	roofRitem->StartIndexLocation = roofRitem->Geo->DrawArgs["rooftop"].StartIndexLocation;
-	roofRitem->BaseVertexLocation = roofRitem->Geo->DrawArgs["rooftop"].BaseVertexLocation;
-	mAllRitems.push_back(std::move(roofRitem));
+
+
 
 
 

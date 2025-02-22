@@ -775,14 +775,17 @@ GeometryGenerator::MeshData GeometryGenerator::CreateTorus(float radius, float t
 			XMVECTOR tubeNormal = XMVectorSet(cosf(tubeSliceAngle), sinf(tubeSliceAngle), 0.0f, 0.0f);
 			XMVECTOR position = sliceCenter + tubeRadius * tubeNormal;
 
+			// Compute the vertex
 			Vertex vertex;
 			XMStoreFloat3(&vertex.Position, position);
 			XMStoreFloat3(&vertex.Normal, XMVector3Normalize(position - sliceCenter));
 			XMStoreFloat3(&vertex.TangentU, XMVector3Normalize(XMVectorSet(-sinf(sliceAngle), 0.0f, cosf(sliceAngle), 0.0f)));
 
+			// Set texture coordinates (u, v)
 			vertex.TexC.x = (float)i / sliceCount;
 			vertex.TexC.y = (float)j / tubeSliceCount;
 
+			// Store the vertex in the appropriate index in the array
 			meshData.Vertices[i * (tubeSliceCount + 1) + j] = vertex;
 		}
 	}
@@ -793,17 +796,79 @@ GeometryGenerator::MeshData GeometryGenerator::CreateTorus(float radius, float t
 	{
 		for (uint32 j = 0; j < tubeSliceCount; ++j)
 		{
-			uint32 nextI = (i + 1) % (sliceCount + 1);
-			uint32 nextJ = (j + 1) % (tubeSliceCount + 1);
+			// Compute indices for each quad (two triangles per quad)
+			uint32 current = i * (tubeSliceCount + 1) + j;
+			uint32 nextI = (i + 1) % (sliceCount + 1); // Wraps around at the end
+			uint32 nextJ = (j + 1) % (tubeSliceCount + 1); // Wraps around at the end
 
-			meshData.Indices32[index++] = i * (tubeSliceCount + 1) + j;
-			meshData.Indices32[index++] = nextI * (tubeSliceCount + 1) + j;
-			meshData.Indices32[index++] = i * (tubeSliceCount + 1) + nextJ;
+			uint32 next = nextI * (tubeSliceCount + 1) + j;
+			uint32 nextNextJ = nextI * (tubeSliceCount + 1) + nextJ;
+			uint32 currentNextJ = i * (tubeSliceCount + 1) + nextJ;
 
-			meshData.Indices32[index++] = nextI * (tubeSliceCount + 1) + j;
-			meshData.Indices32[index++] = nextI * (tubeSliceCount + 1) + nextJ;
-			meshData.Indices32[index++] = i * (tubeSliceCount + 1) + nextJ;
+			// First triangle
+			meshData.Indices32[index++] = current;
+			meshData.Indices32[index++] = next;
+			meshData.Indices32[index++] = currentNextJ;
+
+			// Second triangle
+			meshData.Indices32[index++] = next;
+			meshData.Indices32[index++] = nextNextJ;
+			meshData.Indices32[index++] = currentNextJ;
 		}
+	}
+
+	return meshData;
+}
+
+GeometryGenerator::MeshData GeometryGenerator::CreatePyramid(float baseWidth, float height, uint32 numSubdivisions)
+{
+	MeshData meshData;
+
+	//
+	// Create the vertices.
+	//
+
+	Vertex v[5];
+
+	float halfBase = 0.5f * baseWidth;
+	float h = height;
+
+	// Define the 4 vertices for the base (square).
+	v[0] = Vertex(-halfBase, 0.0f, -halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f); // Base front-left
+	v[1] = Vertex(-halfBase, 0.0f, +halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f); // Base back-left
+	v[2] = Vertex(+halfBase, 0.0f, +halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f); // Base back-right
+	v[3] = Vertex(+halfBase, 0.0f, -halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f); // Base front-right
+
+	// Define the apex of the pyramid.
+	v[4] = Vertex(0.0f, h, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f); // Apex (top)
+
+	meshData.Vertices.assign(&v[0], &v[5]);
+
+	//
+	// Create the indices.
+	//
+
+	uint32 i[18];
+
+	// Base face (quad)
+	i[0] = 0; i[1] = 1; i[2] = 2;
+	i[3] = 0; i[4] = 2; i[5] = 3;
+
+	// Side faces (4 triangles)
+	i[6] = 0; i[7] = 1; i[8] = 4;
+	i[9] = 1; i[10] = 2; i[11] = 4;
+	i[12] = 2; i[13] = 3; i[14] = 4;
+	i[15] = 3; i[16] = 0; i[17] = 4;
+
+	meshData.Indices32.assign(&i[0], &i[18]);
+
+	// Put a cap on the number of subdivisions.
+	numSubdivisions = std::min<uint32>(numSubdivisions, 6u);
+
+	// Apply subdivisions if needed
+	for (uint32 j = 0; j < numSubdivisions; ++j)
+	{
+		Subdivide(meshData);
 	}
 
 	return meshData;
