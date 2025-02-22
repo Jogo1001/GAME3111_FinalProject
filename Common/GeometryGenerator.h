@@ -120,6 +120,19 @@ public:
 
 	GeometryGenerator::MeshData CreatePyramid(float baseWidth, float height, uint32 numSubdivisions);
 
+	GeometryGenerator::MeshData CreateDiamond(float baseWidth, float height, uint32 numSubdivisions);
+
+	GeometryGenerator::MeshData CreateDiamond1(float baseWidth, float height, uint32 numSubdivisions);
+
+	
+
+	
+	
+
+	
+
+	
+
 
 
 	

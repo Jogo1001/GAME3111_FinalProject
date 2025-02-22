@@ -654,6 +654,9 @@ void ShapesApp::BuildShapeGeometry()
 
 	GeometryGenerator::MeshData pyramid = geoGen.CreatePyramid(2.0f, 3.0f, 2.0f);
 
+	GeometryGenerator::MeshData diamond = geoGen.CreateDiamond(2.0f, 3.0f,2.0f);  
+
+	GeometryGenerator::MeshData diamond1 = geoGen.CreateDiamond1(2.0f, 3.0f, 2.0f);
 
 
 
@@ -669,6 +672,8 @@ void ShapesApp::BuildShapeGeometry()
 	UINT wedgeVertexOffset = coneVertexOffset + (UINT)cone.Vertices.size();
 	UINT torusVertexOffset = wedgeVertexOffset + (UINT)wedge.Vertices.size();
 	UINT pyramidVertexOffset = torusVertexOffset + (UINT)torus.Vertices.size();
+	UINT diamondVertexOffset = pyramidVertexOffset + (UINT)diamond.Vertices.size();
+	UINT diamond1VertexOffset = diamondVertexOffset + (UINT)diamond1.Vertices.size();
 
 	
 	
@@ -683,6 +688,8 @@ void ShapesApp::BuildShapeGeometry()
 	UINT wedgeIndexOffset = coneIndexOffset + (UINT)cone.Indices32.size();
 	UINT torusIndexOffset = wedgeIndexOffset + (UINT)wedge.Indices32.size();
 	UINT pyramidIndexOffset = torusIndexOffset + (UINT)torus.Indices32.size();
+	UINT diamondIndexOffset = pyramidIndexOffset + (UINT)diamond.Indices32.size();
+	UINT diamond1IndexOffset = diamondIndexOffset + (UINT)diamond1.Indices32.size();
 
 	
 
@@ -734,9 +741,20 @@ void ShapesApp::BuildShapeGeometry()
 	pyramidSubmesh.StartIndexLocation = pyramidIndexOffset;
 	pyramidSubmesh.BaseVertexLocation = pyramidVertexOffset;
 
+	SubmeshGeometry diamondSubmesh; // Submesh for torus
+	diamondSubmesh.IndexCount = (UINT)diamond.Indices32.size();
+	diamondSubmesh.StartIndexLocation = diamondIndexOffset;
+	diamondSubmesh.BaseVertexLocation = diamondVertexOffset;
+
+	SubmeshGeometry diamond1Submesh; // Submesh for torus
+	diamond1Submesh.IndexCount = (UINT)diamond1.Indices32.size();
+	diamond1Submesh.StartIndexLocation = diamond1IndexOffset;
+	diamond1Submesh.BaseVertexLocation = diamond1VertexOffset;
+
 	// Total vertex count
 	auto totalVertexCount = box.Vertices.size() + cylinder.Vertices.size() + grid.Vertices.size()
-		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + wedge.Vertices.size() + torus.Vertices.size() + pyramid.Vertices.size();
+		+ rooftop.Vertices.size() + door.Vertices.size() + cone.Vertices.size() + wedge.Vertices.size() + torus.Vertices.size() 
+		+ pyramid.Vertices.size() + diamond.Vertices.size() + diamond1.Vertices.size();
 
 
 	std::vector<Vertex> vertices(totalVertexCount);
@@ -748,7 +766,7 @@ void ShapesApp::BuildShapeGeometry()
 	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = box.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Blue); // wall color
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Crimson); // wall color
 	}
 	// Cylinder vertices (red towers)
 	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
@@ -772,29 +790,39 @@ void ShapesApp::BuildShapeGeometry()
 	for (size_t i = 0; i < door.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = door.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Black); // door color
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::SaddleBrown); // door color
 	}
 	for (size_t i = 0; i < cone.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = cone.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Orange); // cone color
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Yellow); // cone color
 	}
 	for (size_t i = 0; i < wedge.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = wedge.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkCyan); // Wedge color (e.g., purple)
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Navy); // Wedge color 
 	}
 	for (size_t i = 0; i < torus.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = torus.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Purple); // Torus color
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::DarkViolet); // Torus color
 	}
 	for (size_t i = 0; i < pyramid.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = pyramid.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Aqua); // Torus color
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::MidnightBlue); // pyramid color
+	}
+	for (size_t i = 0; i < diamond.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = diamond.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Yellow); // diamond color
 	}
 
+	for (size_t i = 0; i < diamond1.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = diamond.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Yellow); // diamond color
+	}
 	// Combine all indices into one buffer
 	std::vector<std::uint16_t> indices;
 	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
@@ -806,6 +834,8 @@ void ShapesApp::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
 	indices.insert(indices.end(), std::begin(torus.GetIndices16()), std::end(torus.GetIndices16()));
 	indices.insert(indices.end(), std::begin(pyramid.GetIndices16()), std::end(pyramid.GetIndices16()));
+	indices.insert(indices.end(), std::begin(diamond.GetIndices16()), std::end(diamond.GetIndices16()));
+	indices.insert(indices.end(), std::begin(diamond1.GetIndices16()), std::end(diamond1.GetIndices16()));
 
 	// Upload combined geometry to GPU
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -846,7 +876,8 @@ void ShapesApp::BuildShapeGeometry()
 	geo->DrawArgs["wedge"] = wedgeSubmesh;
 	geo->DrawArgs["torus"] = torusSubmesh;
 	geo->DrawArgs["pyramid"] = pyramidSubmesh;
-
+	geo->DrawArgs["diamond"] = diamondSubmesh;
+	geo->DrawArgs["diamond1"] = diamond1Submesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
@@ -1021,9 +1052,9 @@ void ShapesApp::BuildRenderItems()
 	XMFLOAT3 leftWedgePosition = XMFLOAT3(-castleWidth / 2 - 1.0f, wallHeight / 2, -castleDepth / 2 + 0.1f); // Adjusted position
 	XMFLOAT3 leftWedgeScale = XMFLOAT3(0.5f, wallHeight, 0.5f); // Smaller wedge scale
 	XMStoreFloat4x4(&leftWedgeRitem->World,
-		XMMatrixScaling(leftWedgeScale.x, leftWedgeScale.y, leftWedgeScale.z) *
-		XMMatrixTranslation(leftWedgePosition.x, leftWedgePosition.y, leftWedgePosition.z) *
-		XMMatrixRotationY(XMConvertToRadians(-15.0f))); // Rotate for fence-like slant
+	XMMatrixScaling(leftWedgeScale.x, leftWedgeScale.y, leftWedgeScale.z) *
+	XMMatrixTranslation(leftWedgePosition.x, leftWedgePosition.y, leftWedgePosition.z) *
+	XMMatrixRotationY(XMConvertToRadians(-15.0f))); // Rotate for fence-like slant
 
 	leftWedgeRitem->ObjCBIndex = wallIndex++;
 	leftWedgeRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1038,10 +1069,9 @@ void ShapesApp::BuildRenderItems()
 	XMFLOAT3 rightWedgePosition = XMFLOAT3(castleWidth / 2 + 1.0f, wallHeight / 2, -castleDepth / 2 + 0.1f); // Adjusted position
 	XMFLOAT3 rightWedgeScale = XMFLOAT3(0.5f, wallHeight, 0.5f); // Smaller wedge scale
 	XMStoreFloat4x4(&rightWedgeRitem->World,
-		XMMatrixScaling(rightWedgeScale.x, rightWedgeScale.y, rightWedgeScale.z) *
-		XMMatrixTranslation(rightWedgePosition.x, rightWedgePosition.y, rightWedgePosition.z) *
-		XMMatrixRotationY(XMConvertToRadians(15.0f))); // Rotate for fence-like slant
-
+	XMMatrixScaling(rightWedgeScale.x, rightWedgeScale.y, rightWedgeScale.z) *
+	XMMatrixTranslation(rightWedgePosition.x, rightWedgePosition.y, rightWedgePosition.z) *
+	XMMatrixRotationY(XMConvertToRadians(15.0f))); // Rotate for fence-like slant
 	rightWedgeRitem->ObjCBIndex = wallIndex++;
 	rightWedgeRitem->Geo = mGeometries["shapeGeo"].get();
 	rightWedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1064,15 +1094,14 @@ void ShapesApp::BuildRenderItems()
 		}
 		else // Second torus
 		{
-			torusPosition = XMFLOAT3(2.0f, -0.8f, -2.0f); // Adjust Y to be above the ground
+			torusPosition = XMFLOAT3(2.0f, -0.8f, -2.0f); 
 		}
 
-		// Set the world matrix for the torus
 		XMStoreFloat4x4(&torusRitem->World,
 			XMMatrixScaling(torusScale.x, torusScale.y, torusScale.z) *
 			XMMatrixTranslation(torusPosition.x, torusPosition.y, torusPosition.z));
 
-		torusRitem->ObjCBIndex = wallIndex++; // Increment index
+		torusRitem->ObjCBIndex = wallIndex++;
 		torusRitem->Geo = mGeometries["shapeGeo"].get();
 		torusRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		torusRitem->IndexCount = torusRitem->Geo->DrawArgs["torus"].IndexCount;
@@ -1118,22 +1147,49 @@ void ShapesApp::BuildRenderItems()
 	auto pyramidItem = std::make_unique<RenderItem>();
 	XMFLOAT3 pyramidPosition = XMFLOAT3(0.0f, 2.0f, 0.0f); // Position for the pyramid
 	XMFLOAT3 pyramidScale = XMFLOAT3(2.6f, 1.0f, 2.6f); // Scale for the pyramid
-
-
-
-	// Set the world matrix for the pyramid
 	XMStoreFloat4x4(&pyramidItem->World,
-		XMMatrixScaling(pyramidScale.x, pyramidScale.y, pyramidScale.z) *
-		XMMatrixTranslation(pyramidPosition.x, pyramidPosition.y, pyramidPosition.z));
-
+	XMMatrixScaling(pyramidScale.x, pyramidScale.y, pyramidScale.z) *
+	XMMatrixTranslation(pyramidPosition.x, pyramidPosition.y, pyramidPosition.z));
 	pyramidItem->ObjCBIndex = wallIndex++; // Increment index
 	pyramidItem->Geo = mGeometries["shapeGeo"].get();
 	pyramidItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	pyramidItem->IndexCount = pyramidItem->Geo->DrawArgs["pyramid"].IndexCount;
 	pyramidItem->StartIndexLocation = pyramidItem->Geo->DrawArgs["pyramid"].StartIndexLocation;
 	pyramidItem->BaseVertexLocation = pyramidItem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-
 	mAllRitems.push_back(std::move(pyramidItem));
+
+
+	//Create Diamond
+	auto diamondItem = std::make_unique<RenderItem>();
+	XMFLOAT3 diamondPosition = XMFLOAT3(0.0f, 5.5f, 0.0f); // Position for the pyramid
+	XMFLOAT3 diamondScale = XMFLOAT3(0.2f, -0.2f, 0.2f); // Scale for the pyramid
+	XMStoreFloat4x4(&diamondItem->World,
+		XMMatrixScaling(diamondScale.x, diamondScale.y, diamondScale.z) *
+		XMMatrixTranslation(diamondPosition.x, diamondPosition.y, diamondPosition.z));
+	diamondItem->ObjCBIndex = wallIndex++; // Increment index
+	diamondItem->Geo = mGeometries["shapeGeo"].get();
+	diamondItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	diamondItem->IndexCount = diamondItem->Geo->DrawArgs["diamond"].IndexCount;
+	diamondItem->StartIndexLocation = diamondItem->Geo->DrawArgs["diamond"].StartIndexLocation;
+	diamondItem->BaseVertexLocation = diamondItem->Geo->DrawArgs["diamond"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(diamondItem));
+
+	auto diamond1Item = std::make_unique<RenderItem>();
+	XMFLOAT3 diamond1Position = XMFLOAT3(0.0f, 5.48f, 0.0f); // Position for the pyramid
+	XMFLOAT3 diamond1Scale = XMFLOAT3(0.2f, 0.2f, 0.2f); // Scale for the pyramid
+	XMStoreFloat4x4(&diamond1Item->World,
+		XMMatrixScaling(diamond1Scale.x, diamond1Scale.y, diamond1Scale.z) *
+		XMMatrixTranslation(diamond1Position.x, diamond1Position.y, diamond1Position.z));
+	diamond1Item->ObjCBIndex = wallIndex++; // Increment index
+	diamond1Item->Geo = mGeometries["shapeGeo"].get();
+	diamond1Item->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	diamond1Item->IndexCount = diamond1Item->Geo->DrawArgs["diamond1"].IndexCount;
+	diamond1Item->StartIndexLocation = diamond1Item->Geo->DrawArgs["diamond1"].StartIndexLocation;
+	diamond1Item->BaseVertexLocation = diamond1Item->Geo->DrawArgs["diamond1"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(diamond1Item));
+
+
+
 
 	// Create ground plane using grid
 	float gridYOffset = -1.0f;

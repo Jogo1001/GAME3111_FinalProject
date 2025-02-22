@@ -873,6 +873,111 @@ GeometryGenerator::MeshData GeometryGenerator::CreatePyramid(float baseWidth, fl
 
 	return meshData;
 }
+GeometryGenerator::MeshData GeometryGenerator::CreateDiamond(float baseWidth, float height, uint32 numSubdivisions)
+{
+	MeshData meshData;
 
+	//
+	// Create the vertices.
+	//
+
+	Vertex v[5];
+
+	float halfBase = 0.5f * baseWidth;
+	float h = height;
+
+	// Define the 4 vertices for the base (square).
+	v[0] = Vertex(-halfBase, 0.0f, -halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f); // Base front-left
+	v[1] = Vertex(-halfBase, 0.0f, +halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f); // Base back-left
+	v[2] = Vertex(+halfBase, 0.0f, +halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f); // Base back-right
+	v[3] = Vertex(+halfBase, 0.0f, -halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f); // Base front-right
+
+	// Define the apex of the pyramid.
+	v[4] = Vertex(0.0f, h, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f); // Apex (top)
+
+	meshData.Vertices.assign(&v[0], &v[5]);
+
+	//
+	// Create the indices.
+	//
+
+	uint32 i[18];
+
+	// Base face (quad)
+	i[0] = 0; i[1] = 1; i[2] = 2;
+	i[3] = 0; i[4] = 2; i[5] = 3;
+
+	// Side faces (4 triangles)
+	i[6] = 0; i[7] = 1; i[8] = 4;
+	i[9] = 1; i[10] = 2; i[11] = 4;
+	i[12] = 2; i[13] = 3; i[14] = 4;
+	i[15] = 3; i[16] = 0; i[17] = 4;
+
+	meshData.Indices32.assign(&i[0], &i[18]);
+
+	// Put a cap on the number of subdivisions.
+	numSubdivisions = std::min<uint32>(numSubdivisions, 6u);
+
+	// Apply subdivisions if needed
+	for (uint32 j = 0; j < numSubdivisions; ++j)
+	{
+		Subdivide(meshData);
+	}
+
+	return meshData;
+}
+GeometryGenerator::MeshData GeometryGenerator::CreateDiamond1(float baseWidth, float height, uint32 numSubdivisions)
+{
+	MeshData meshData;
+
+	//
+	// Create the vertices.
+	//
+
+	Vertex v[5];
+
+	float halfBase = 0.5f * baseWidth;
+	float h = height;
+
+	// Define the 4 vertices for the base (square).
+	v[0] = Vertex(-halfBase, 0.0f, -halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f); // Base front-left
+	v[1] = Vertex(-halfBase, 0.0f, +halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f); // Base back-left
+	v[2] = Vertex(+halfBase, 0.0f, +halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f); // Base back-right
+	v[3] = Vertex(+halfBase, 0.0f, -halfBase, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f); // Base front-right
+
+	// Define the apex of the pyramid.
+	v[4] = Vertex(0.0f, h, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f); // Apex (top)
+
+	meshData.Vertices.assign(&v[0], &v[5]);
+
+	//
+	// Create the indices.
+	//
+
+	uint32 i[18];
+
+	// Base face (quad)
+	i[0] = 0; i[1] = 1; i[2] = 2;
+	i[3] = 0; i[4] = 2; i[5] = 3;
+
+	// Side faces (4 triangles)
+	i[6] = 0; i[7] = 1; i[8] = 4;
+	i[9] = 1; i[10] = 2; i[11] = 4;
+	i[12] = 2; i[13] = 3; i[14] = 4;
+	i[15] = 3; i[16] = 0; i[17] = 4;
+
+	meshData.Indices32.assign(&i[0], &i[18]);
+
+	// Put a cap on the number of subdivisions.
+	numSubdivisions = std::min<uint32>(numSubdivisions, 6u);
+
+	// Apply subdivisions if needed
+	for (uint32 j = 0; j < numSubdivisions; ++j)
+	{
+		Subdivide(meshData);
+	}
+
+	return meshData;
+}
 
 
