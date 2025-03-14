@@ -519,15 +519,29 @@ void TreeBillboardsApp::UpdateMainPassCB(const GameTimer& gt)
 
 	mMainPassCB.FogColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); // fog color black
 
+
+	//// brighter yellow light
 	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+	mMainPassCB.Lights[0].Strength = { 0.15f, 0.15f, 0.0f };
+
+
+	// light sun
 	mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
+	mMainPassCB.Lights[1].Strength = { 1.0f, 0.5f, 0.0f };
+
+	// brighter yellow light
 	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
+	mMainPassCB.Lights[2].Strength = { 1.0f, 1.0f, 0.0f };
+
+
+	// light sun
+	mMainPassCB.Lights[3].Direction = { 0.0f, 0.707f, 0.707f };
+	mMainPassCB.Lights[3].Strength = { 1.0f, 0.5f, 0.0f };
 
 	auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
+
+
 }
 
 void TreeBillboardsApp::UpdateWaves(const GameTimer& gt)
