@@ -80,6 +80,8 @@ public:
 	///</summary>
     MeshData CreateBox(float width, float height, float depth, uint32 numSubdivisions);
 
+	GeometryGenerator::MeshData CreateDoor(float width, float height, float depth, uint32 numSubdivisions);
+
 	///<summary>
 	/// Creates a sphere centered at the origin with the given radius.  The
 	/// slices and stacks parameters control the degree of tessellation.
@@ -110,19 +112,20 @@ public:
 	///</summary>
     MeshData CreateQuad(float x, float y, float w, float h, float depth);
 
-	GeometryGenerator::MeshData CreateCone(float bottomRadius, float height, uint32_t sliceCount);
+	GeometryGenerator::MeshData CreateCone(float bottomRadius, float height, uint32_t sliceCount, uint32_t stackCount);
 
-	GeometryGenerator::MeshData CreateWedge(float radius, float height, float angle, uint32 numSubdivisions);
+	GeometryGenerator::MeshData CreatePyramid(float baseWidth, float height);
+
+	GeometryGenerator::MeshData CreateWedge(float width, float height, float depth);
+
+	GeometryGenerator::MeshData CreateTorus(float radius, float tubeRadius, uint32 sliceCount, uint32 stackCount);
+
+	GeometryGenerator::MeshData CreateDiamond(float height, float width, uint32 numSubdivisions);
+
+	GeometryGenerator::MeshData CreateTriangularPrism(float baseWidth, float height, float depth);
 
 	
 
-	GeometryGenerator::MeshData CreateTorus(float radius, float tubeRadius, uint32 sliceCount, uint32 tubeSliceCount);
-
-	GeometryGenerator::MeshData CreatePyramid(float baseWidth, float height, uint32 numSubdivisions);
-
-	GeometryGenerator::MeshData CreateDiamond(float baseWidth, float height, uint32 numSubdivisions);
-
-	GeometryGenerator::MeshData CreateDiamond1(float baseWidth, float height, uint32 numSubdivisions);
 
 	
 
