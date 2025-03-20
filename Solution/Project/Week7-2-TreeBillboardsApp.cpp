@@ -519,24 +519,53 @@ void TreeBillboardsApp::UpdateMainPassCB(const GameTimer& gt)
 
 	mMainPassCB.FogColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); // fog color black
 
+	// randomly changing the light 
+	static float lightningTimer = 0.0f;
+	static bool lightningActive = false;
+	static float lightningDuration = 0.1f; // Duration of each lightning 
+	static float lightningCooldown = 3.0f; // lightning flashes
 
-	//// brighter yellow light
-	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[0].Strength = { 0.15f, 0.15f, 0.0f };
+	lightningTimer += gt.DeltaTime();
 
+	if (lightningActive)
+	{
+		if (lightningTimer >= lightningDuration)
+		{
+			lightningCooldown = 1.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (5.0f - 1.0f)));
 
-	// light sun
-	mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[1].Strength = { 1.0f, 0.5f, 0.0f };
+			lightningActive = false;
+			lightningTimer = 0.0f;
+		}
+		else
+		{
+			// Bright white light for lightning
+			mMainPassCB.Lights[0].Strength = { 10.0f, 10.0f, 10.0f };
+			mMainPassCB.Lights[1].Strength = { 10.0f, 10.0f, 10.0f };
+			mMainPassCB.Lights[2].Strength = { 10.0f, 10.0f, 10.0f };
+			mMainPassCB.Lights[3].Strength = { 10.0f, 10.0f, 10.0f };
+		}
+	}
+	else
+	{
+		if (lightningTimer >= lightningCooldown)
+		{
+			lightningActive = true;
+			lightningTimer = 0.0f;
+		}
+		else
+		{
+			// Normal lighting conditions
+			mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
+			mMainPassCB.Lights[0].Strength = { 0.15f, 0.15f, 0.0f };
+			mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
+			mMainPassCB.Lights[1].Strength = { 1.0f, 0.5f, 0.0f };
+			mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
+			mMainPassCB.Lights[2].Strength = { 1.0f, 1.0f, 0.0f };
+			mMainPassCB.Lights[3].Direction = { 0.0f, 0.707f, 0.707f };
+			mMainPassCB.Lights[3].Strength = { 1.0f, 0.5f, 0.0f };
+		}
+	}
 
-	// brighter yellow light
-	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-	mMainPassCB.Lights[2].Strength = { 1.0f, 1.0f, 0.0f };
-
-
-	// light sun
-	mMainPassCB.Lights[3].Direction = { 0.0f, 0.707f, 0.707f };
-	mMainPassCB.Lights[3].Strength = { 1.0f, 0.5f, 0.0f };
 
 	auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
